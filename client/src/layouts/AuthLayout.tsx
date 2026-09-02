@@ -1,10 +1,7 @@
-import { Outlet, useNavigate, Navigate } from "react-router-dom";
-import { useEffect } from "react";
+import { Outlet, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const AuthLayout = () => {
-
-    const navigate = useNavigate();
     const { isAuth, id, role, loading } = useAuth();
 
 

@@ -2,7 +2,7 @@ import api from "./baseURL";
 import type { RegisterData, LoginData } from "../context/AuthContext";
 
 
-export const checkIsAuthenticated = async (token: string) => {
+export const checkIsAuthenticated = async () => {
 
     const response = await api.get("/api/auth/check-auth");
 

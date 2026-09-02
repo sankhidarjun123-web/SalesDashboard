@@ -72,7 +72,7 @@ export const AuthProvider = ({
         try {
 
             const response =
-                await checkIsAuthenticated(token);
+                await checkIsAuthenticated();
 
             setIsAuth(true);
 
