@@ -1,16 +1,14 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { getUsersInfo } from "../api/users.api";
+import type { User } from "../types/user.types";
+import { updateSales } from "../api/sales.api";
+import { toast } from "react-toastify";
 
-type SaleStatus = "pending" | "done" | "failed";
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: "user";
-}
+type SaleStatus = "pending" | "shipped" | "cancelled";
 
 interface Sale {
-  id: string;
+  _id: string;
   title: string;
   category: string;
   amount: number;
@@ -22,83 +20,78 @@ interface Sale {
 }
 
 const UserDashboard = () => {
-  /* ================= USER ================= */
 
-  const user: User = {
-    id: "user-1",
-    name: "John Doe",
-    email: "john@example.com",
-    role: "user",
-  };
+  const { usersId } = useParams();
 
-  /* ================= ASSIGNED SALES ================= */
+  const [fetchedUser, setFetchedUser] =
+    useState<User | null>(null);
 
-  const [sales, setSales] = useState<Sale[]>([
-    {
-      id: "sale-1",
-      title: "Laptop Order",
-      category: "Electronics",
-      amount: 50000,
-      customerName: "Rahul Kumar",
-      customerEmail: "rahul@example.com",
-      assignedBy: "Arjun Sharma",
-      status: "pending",
-      assignedAt: "01 Sep 2026",
-    },
-    {
-      id: "sale-2",
-      title: "Office Chair Sale",
-      category: "Furniture",
-      amount: 15000,
-      customerName: "Priya Singh",
-      customerEmail: "priya@example.com",
-      assignedBy: "Arjun Sharma",
-      status: "pending",
-      assignedAt: "31 Aug 2026",
-    },
-    {
-      id: "sale-3",
-      title: "Mobile Phone Order",
-      category: "Electronics",
-      amount: 30000,
-      customerName: "Aman Verma",
-      customerEmail: "aman@example.com",
-      assignedBy: "Rahul Sharma",
-      status: "done",
-      assignedAt: "29 Aug 2026",
-    },
-    {
-      id: "sale-4",
-      title: "Book Collection",
-      category: "Books",
-      amount: 5000,
-      customerName: "Sneha Gupta",
-      customerEmail: "sneha@example.com",
-      assignedBy: "Arjun Sharma",
-      status: "failed",
-      assignedAt: "28 Aug 2026",
-    },
-  ]);
+  const [sales, setSales] = useState<Sale[]>([]);
 
-  /* ================= UPDATE SALE STATUS ================= */
 
-  const updateSaleStatus = (
+  useEffect(() => {
+
+    const getUserInfo = async () => {
+
+      if (!usersId) return;
+
+      try {
+
+        const info = await getUsersInfo(usersId);
+
+        setFetchedUser(info.userInfo);
+        setSales(info.sales);
+        toast.success("Welcome back: ", info.userInfo.name);
+
+      } catch (err) {
+
+        console.error(err);
+        toast.error("An Error occured while accessing the dashboard!");
+      }
+
+    };
+
+    getUserInfo();
+
+  }, [usersId]);
+
+
+  const updateSaleStatus = async (
     saleId: string,
     newStatus: SaleStatus
   ) => {
-    setSales((previousSales) =>
-      previousSales.map((sale) =>
-        sale.id === saleId
-          ? {
-              ...sale,
-              status: newStatus,
-            }
-          : sale
-      )
-    );
+
+    try {
+
+      let update: boolean = false;
+      if(newStatus === "shipped") update = true;
+      else if (newStatus === "cancelled") update = false;
+
+      else return;
+      await updateSales(saleId, update);
+
+      setSales((previousSales) =>
+        previousSales.map((sale) =>
+          sale._id === saleId
+            ? {
+                ...sale,
+                status: newStatus
+              }
+            : sale
+        )
+      );
+
+      toast.success(`Sales status set to: ${newStatus} successfully!`);
+
+    } catch (err) {
+
+      console.error(err);
+      toast.error("Error updating the Sales status!");
+
+    }
+
   };
 
-  /* ================= STATISTICS ================= */
 
   const totalSales = sales.length;
 
@@ -106,85 +99,48 @@ const UserDashboard = () => {
     (sale) => sale.status === "pending"
   ).length;
 
-  const completedSales = sales.filter(
-    (sale) => sale.status === "done"
+  const shippedSales = sales.filter(
+    (sale) => sale.status === "shipped"
   ).length;
 
-  const failedSales = sales.filter(
-    (sale) => sale.status === "failed"
+  const cancelledSales = sales.filter(
+    (sale) => sale.status === "cancelled"
   ).length;
 
-  /* ================= STATUS STYLE ================= */
 
   const getStatusStyle = (status: SaleStatus) => {
+
     switch (status) {
+
       case "pending":
         return "bg-amber-100 text-amber-700";
 
-      case "done":
+      case "shipped":
         return "bg-green-100 text-green-700";
 
-      case "failed":
+      case "cancelled":
         return "bg-red-100 text-red-700";
 
       default:
         return "bg-slate-100 text-slate-700";
+
     }
+
   };
 
+
+  if (!fetchedUser) {
+    return <div>Loading...</div>;
+  }
+
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
 
-      {/* ================= NAVBAR ================= */}
-
-      <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
-
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-
-          {/* LOGO */}
-
-          <div className="text-xl font-bold tracking-tight text-indigo-600">
-            SalesFlow
-          </div>
-
-          {/* NAVIGATION */}
-
-          <div className="flex items-center gap-2 sm:gap-4">
-
-            <button
-              type="button"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-indigo-600 transition hover:bg-indigo-50"
-            >
-              Dashboard
-            </button>
-
-            <button
-              type="button"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 hover:text-indigo-600"
-            >
-              My Sales
-            </button>
-
-            <button
-              type="button"
-              className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 transition hover:bg-red-50"
-            >
-              Logout
-            </button>
-
-          </div>
-
-        </div>
-
-      </nav>
-
-
-      {/* ================= MAIN CONTENT ================= */}
+    <div>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
 
-
-        {/* ================= PAGE HEADER ================= */}
+        {/* PAGE HEADER */}
 
         <div className="mb-8">
 
@@ -199,33 +155,29 @@ const UserDashboard = () => {
         </div>
 
 
-        {/* ================= USER PROFILE ================= */}
+        {/* USER PROFILE */}
 
         <section className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
 
           <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
 
-            {/* AVATAR */}
-
             <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-indigo-600 text-2xl font-semibold text-white">
 
-              {user.name.charAt(0)}
+              {fetchedUser.name?.charAt(0) || "U"}
 
             </div>
 
-
-            {/* USER INFORMATION */}
 
             <div className="flex-1">
 
               <div className="flex flex-wrap items-center gap-3">
 
                 <h2 className="text-xl font-semibold text-slate-900">
-                  {user.name}
+                  {fetchedUser.name}
                 </h2>
 
                 <span className="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold uppercase text-indigo-700">
-                  {user.role}
+                  {fetchedUser.role}
                 </span>
 
               </div>
@@ -237,7 +189,7 @@ const UserDashboard = () => {
                   Email:
                 </span>{" "}
 
-                {user.email}
+                {fetchedUser.email}
 
               </p>
 
@@ -248,12 +200,10 @@ const UserDashboard = () => {
         </section>
 
 
-        {/* ================= STATISTICS ================= */}
+        {/* STATISTICS */}
 
         <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-
-          {/* TOTAL */}
 
           <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
 
@@ -268,8 +218,6 @@ const UserDashboard = () => {
           </div>
 
 
-          {/* PENDING */}
-
           <div className="rounded-xl border border-amber-100 bg-white p-5 shadow-sm">
 
             <p className="text-sm font-medium text-slate-500">
@@ -283,31 +231,27 @@ const UserDashboard = () => {
           </div>
 
 
-          {/* COMPLETED */}
-
           <div className="rounded-xl border border-green-100 bg-white p-5 shadow-sm">
 
             <p className="text-sm font-medium text-slate-500">
-              Completed
+              Shipped
             </p>
 
             <p className="mt-2 text-3xl font-bold text-green-600">
-              {completedSales}
+              {shippedSales}
             </p>
 
           </div>
 
 
-          {/* FAILED */}
-
           <div className="rounded-xl border border-red-100 bg-white p-5 shadow-sm">
 
             <p className="text-sm font-medium text-slate-500">
-              Failed
+              Cancelled
             </p>
 
             <p className="mt-2 text-3xl font-bold text-red-600">
-              {failedSales}
+              {cancelledSales}
             </p>
 
           </div>
@@ -315,12 +259,10 @@ const UserDashboard = () => {
         </section>
 
 
-        {/* ================= ASSIGNED SALES ================= */}
+        {/* ASSIGNED SALES */}
 
         <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
 
-
-          {/* SECTION HEADER */}
 
           <div className="border-b border-slate-200 p-6">
 
@@ -329,13 +271,11 @@ const UserDashboard = () => {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Complete or mark your assigned sales as failed.
+              Mark your assigned sales as shipped or cancelled.
             </p>
 
           </div>
 
-
-          {/* ================= TABLE ================= */}
 
           <div className="overflow-x-auto">
 
@@ -383,12 +323,10 @@ const UserDashboard = () => {
                 {sales.map((sale) => (
 
                   <tr
-                    key={sale.id}
+                    key={sale._id}
                     className="transition hover:bg-slate-50"
                   >
 
-
-                    {/* SALE */}
 
                     <td className="px-6 py-4">
 
@@ -403,23 +341,15 @@ const UserDashboard = () => {
                     </td>
 
 
-                    {/* CATEGORY */}
-
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {sale.category}
                     </td>
 
 
-                    {/* AMOUNT */}
-
                     <td className="px-6 py-4 text-sm font-semibold text-slate-900">
-
                       ₹{sale.amount.toLocaleString()}
-
                     </td>
 
-
-                    {/* CUSTOMER */}
 
                     <td className="px-6 py-4">
 
@@ -434,14 +364,10 @@ const UserDashboard = () => {
                     </td>
 
 
-                    {/* ASSIGNED BY */}
-
                     <td className="px-6 py-4 text-sm text-slate-600">
                       {sale.assignedBy}
                     </td>
 
-
-                    {/* STATUS */}
 
                     <td className="px-6 py-4">
 
@@ -450,15 +376,11 @@ const UserDashboard = () => {
                           sale.status
                         )}`}
                       >
-
                         {sale.status}
-
                       </span>
 
                     </td>
 
-
-                    {/* ACTIONS */}
 
                     <td className="px-6 py-4">
 
@@ -467,36 +389,33 @@ const UserDashboard = () => {
                         <div className="flex items-center gap-2">
 
 
-                          {/* DONE */}
-
                           <button
                             type="button"
                             onClick={() =>
                               updateSaleStatus(
-                                sale.id,
-                                "done"
+                                sale._id,
+                                "shipped"
                               )
                             }
                             className="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700"
                           >
-                            Mark Done
+                            Mark Shipped
                           </button>
 
-
-                          {/* FAILED */}
 
                           <button
                             type="button"
                             onClick={() =>
                               updateSaleStatus(
-                                sale.id,
-                                "failed"
+                                sale._id,
+                                "cancelled"
                               )
                             }
                             className="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700"
                           >
-                            Mark Failed
+                            Mark Cancelled
                           </button>
+
 
                         </div>
 
@@ -510,6 +429,7 @@ const UserDashboard = () => {
 
                     </td>
 
+
                   </tr>
 
                 ))}
@@ -520,8 +440,6 @@ const UserDashboard = () => {
 
           </div>
 
-
-          {/* ================= FOOTER ================= */}
 
           <div className="border-t border-slate-200 bg-slate-50 px-6 py-4">
 
@@ -539,7 +457,9 @@ const UserDashboard = () => {
       </main>
 
     </div>
+
   );
+
 };
 
 export default UserDashboard;

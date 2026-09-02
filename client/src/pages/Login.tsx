@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { LoginData } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 
 const Login = () => {
@@ -17,8 +18,10 @@ const Login = () => {
         e.preventDefault();
         try {
             await loginUser(loginData);
+            toast.success("Login successful!");
         } catch (err) {
             console.error(err);
+            toast.error("An Error occured!");
         }
     }
 

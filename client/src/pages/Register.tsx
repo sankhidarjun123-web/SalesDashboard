@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type{ RegisterData } from "../context/AuthContext";
+import { toast } from "react-toastify";
 
 const Register = () => {
 
@@ -20,9 +21,10 @@ const Register = () => {
 
         try {
             await registerUser(registerData);
-            console.log("Success");
+            toast.success("Registered successfully!");
         } catch (err) {
             console.error(err);
+            toast.error("An error occured!");
         }
     }
 

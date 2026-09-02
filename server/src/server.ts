@@ -3,9 +3,9 @@ dotenv.config();
 import express, { json, urlencoded } from "express";
 import cors from "cors";
 import authRoutes from "./routes/auth.routes.js";
-import { onlyUsers } from "./middlewares/role.middleware.js";
 import authCheck from "./middlewares/auth.middleware.js";
 import salesRoutes from "./routes/sales.routes.js";
+import userRoutes from "./routes/users.routes.js";
 import connectDB from "./connection.js";
 
 connectDB();
@@ -18,7 +18,9 @@ app.use(cors());
 
 app.use("/api/auth", authRoutes);
 
-app.use("/api/sales", authRoutes, authCheck, onlyUsers, salesRoutes);
+app.use("/api/sales", authCheck, salesRoutes);
+
+app.use("/api/user", authCheck, userRoutes);
 
 app.listen(PORT, () => {
     console.log(`SERVER IS RUNNING ON PORT http://localhost:${PORT}`);
