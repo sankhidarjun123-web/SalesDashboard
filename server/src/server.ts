@@ -11,10 +11,19 @@ import connectDB from "./connection.js";
 connectDB();
 const app = express();
 const PORT = process.env.PORT || 5000;
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://sales-dashboard-lovat-rho.vercel.app",
+];
 
+app.use(
+    cors({
+        origin: allowedOrigins,
+        credentials: true,
+    })
+);
 app.use(urlencoded({ extended: true }));
 app.use(json());
-app.use(cors());
 
 app.use("/api/auth", authRoutes);
 
