@@ -2,7 +2,6 @@ import { Router } from "express";
 import authMiddleware from "../middlewares/auth.middleware.js";
 import { login, register, logout } from "../controllers/auth.controller.js";
 import type { Request, Response } from "express";
-import { LiaUserMdSolid } from "react-icons/lia";
 import UserModel from "../models/User.model.js";
 
 const router = Router();
