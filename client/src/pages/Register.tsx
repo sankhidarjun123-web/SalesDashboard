@@ -21,7 +21,7 @@ const Register = () => {
 
         try {
             await registerUser(registerData);
-            toast.success("Registered successfully!");
+            toast.success("Registered!, Log in with your email and password!");
         } catch (err) {
             console.error(err);
             toast.error("An error occured!");
